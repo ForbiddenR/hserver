@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/spf13/cobra"
 )
@@ -52,15 +53,13 @@ func init() {
 }
 
 func run() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/test", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("receive a message", r.Method)
-		w.WriteHeader(http.StatusAccepted)
-		w.Write([]byte("response to request"))
+	r := gin.Default()
+	r.GET("/test", func(ctx *gin.Context) {
+		ctx.JSON(http.StatusAccepted, `{"status":"ok"}`)
 	})
-
 	po := fmt.Sprintf(":%d", port)
-	err := http3.ListenAndServeQUIC(po, path+"/server.pem", path+"/server.key", mux)
+	// err := http3.ListenAndServeQUIC(po, path+"/server.pem", path+"/server.key", mux)
+	err := http3.ListenAndServeTLS(po, path+"/server.pem", path+"/server.key", r.Handler())
 	if err != nil {
 		panic(err)
 	}
